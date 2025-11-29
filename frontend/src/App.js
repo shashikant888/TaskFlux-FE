@@ -12,26 +12,22 @@ export default function App(){
   useEffect(()=>{
     async function fetchMe(){
       const token = getToken();
+      // If no token, redirect straight to login (avoid backend 'token not found' toast)
       if(!token){
         navigate('/login');
         return;
       }
+
       const res = await getMe();
-      if(res?.response_obj) setUser(res.response_obj);
-      else {
+      // If we got a valid user object set it, otherwise clear user and redirect to login
+      if(res?.response_obj){
+        setUser(res.response_obj);
+      } else {
         setUser(null);
         navigate('/login');
       }
     }
     fetchMe();
-
-    // Listen for global auth logout events from api layer
-    function onAuthLogout(){
-      setUser(null);
-      navigate('/login');
-    }
-    window.addEventListener('auth:logout', onAuthLogout);
-    return ()=> window.removeEventListener('auth:logout', onAuthLogout);
   },[navigate])
 
   async function handleLogout(){

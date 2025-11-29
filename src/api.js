@@ -25,6 +25,13 @@ export async function logout(){
   clearToken();
 }
 
+function handleAuthFailure(parsed, res){
+  // Clear token and notify app to redirect to login without spamming toasts
+  try { clearToken(); } catch(e) {}
+  // dispatch an event the app can listen to
+  try { window.dispatchEvent(new CustomEvent('auth:logout', { detail: { parsed, status: res?.status } })); } catch(e) {}
+}
+
 function authHeaders(){
   const token = getToken();
   return token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -37,6 +44,14 @@ async function doFetch(url, options = {}){
 
   if(!res.ok){
     const msg = parsed?.response_obj?.error?.message || parsed?.response_message || parsed?.message || `Request failed: ${res.status}`;
+    // If auth related (401 or token messages) trigger global logout handler and avoid repeated toasts
+    const lower = (msg || '').toLowerCase();
+    if(res.status === 401 || lower.includes('token') || lower.includes('unauthorized') || lower.includes('not found')){
+      handleAuthFailure(parsed, res);
+      // don't show toast for auth issues; app will redirect
+      return parsed || { response_code: 0, response_message: msg };
+    }
+
     showToast(msg, 'error');
     return parsed || { response_code: 0, response_message: msg };
   }
@@ -52,6 +67,12 @@ async function doFetch(url, options = {}){
       }
     } else {
       const msg = parsed.response_message || parsed?.response_obj?.error?.message || 'Operation failed';
+      // suppress toasts for auth failures here as well
+      const lower = (msg || '').toLowerCase();
+      if(lower.includes('token') || lower.includes('unauthorized') || lower.includes('not found')){
+        handleAuthFailure(parsed, { status: 401 });
+        return parsed;
+      }
       showToast(msg, 'error');
     }
   }
