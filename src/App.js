@@ -3,6 +3,7 @@ import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Dashboard from './components/Dashboard';
+import ContactAdmin from './components/ContactAdmin';
 import { getMe, logout, getToken } from './api';
 
 export default function App() {
@@ -14,7 +15,7 @@ export default function App() {
     async function fetchMe() {
       const token = getToken();
       if (!token) {
-        if (location.pathname !== '/login' && location.pathname !== '/signup') {
+        if (location.pathname !== '/login' && location.pathname !== '/signup' && location.pathname !== '/contact-admin') {
           navigate('/login');
         }
         return;
@@ -57,12 +58,14 @@ export default function App() {
                 )}
               </div>
               <Link to="/">Dashboard</Link>
+              <Link to="/contact-admin">Contact Admin</Link>
               <button onClick={handleLogout}>Logout</button>
             </>
           ) : (
             <>
               {location.pathname !== '/login' && <Link to="/login">Login</Link>}
               {location.pathname !== '/signup' && <Link to="/signup">Signup</Link>}
+              <Link to="/contact-admin">Contact Admin</Link>
             </>
           )}
         </nav>
@@ -72,6 +75,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login onLogin={(u) => setUser(u)} />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/contact-admin" element={<ContactAdmin />} />
           <Route path="/" element={<Dashboard user={user} />} />
         </Routes>
       </main>
