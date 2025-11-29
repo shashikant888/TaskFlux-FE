@@ -1,23 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Dashboard from './components/Dashboard';
 import { getMe, logout, getToken } from './api';
 
-export default function App(){
+export default function App() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  useEffect(()=>{
-    async function fetchMe(){
+  useEffect(() => {
+    async function fetchMe() {
       const token = getToken();
-      if(!token){
-        navigate('/login');
+      if (!token) {
+        if (location.pathname !== '/login' && location.pathname !== '/signup') {
+          navigate('/login');
+        }
         return;
       }
       const res = await getMe();
-      if(res?.response_obj) setUser(res.response_obj);
+      if (res?.response_obj) setUser(res.response_obj);
       else {
         setUser(null);
         navigate('/login');
@@ -26,15 +29,15 @@ export default function App(){
     fetchMe();
 
     // Listen for global auth logout events from api layer
-    function onAuthLogout(){
+    function onAuthLogout() {
       setUser(null);
       navigate('/login');
     }
     window.addEventListener('auth:logout', onAuthLogout);
-    return ()=> window.removeEventListener('auth:logout', onAuthLogout);
-  },[navigate])
+    return () => window.removeEventListener('auth:logout', onAuthLogout);
+  }, [navigate, location.pathname])
 
-  async function handleLogout(){
+  async function handleLogout() {
     await logout();
     setUser(null);
     navigate('/login');
@@ -58,8 +61,8 @@ export default function App(){
             </>
           ) : (
             <>
-              <Link to="/login">Login</Link>
-              <Link to="/signup">Signup</Link>
+              {location.pathname !== '/login' && <Link to="/login">Login</Link>}
+              {location.pathname !== '/signup' && <Link to="/signup">Signup</Link>}
             </>
           )}
         </nav>
@@ -67,7 +70,7 @@ export default function App(){
 
       <main>
         <Routes>
-          <Route path="/login" element={<Login onLogin={(u)=>setUser(u)} />} />
+          <Route path="/login" element={<Login onLogin={(u) => setUser(u)} />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/" element={<Dashboard user={user} />} />
         </Routes>
